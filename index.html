@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card Store - AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #fdfdfd 0%, #fdfdfd 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-content a {
+            color: #667eea;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .message.user .message-content a {
+            color: #fff;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            max-width: 70%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .error-message {
+            background: #ff5252;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 20px;
+            text-align: center;
+        }
+
+        /* Success Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .modal-content h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .payment-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .payment-details div {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 15px;
+        }
+
+        .payment-details .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .payment-details .value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .close-modal-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .close-modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .checkout-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #fdfdfd 0%, #fdfdfd 100%);
+            color: white !important;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none !important;
+            font-weight: 600;
+            font-size: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 8px 0;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkout-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .checkout-link:active {
+            transform: translateY(0);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 Gift Card Store</h1>
+            <p>Chat with our AI assistant to purchase gift cards</p>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message assistant">
+                <div class="message-content">
+                    Hi! I'm your gift card shopping assistant. I can help you browse our gift cards and make a purchase. What would you like to know?
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Type your message here..." 
+                autocomplete="off"
+            />
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h2>Payment Successful!</h2>
+            <p id="modalMessage">Your payment has been processed successfully</p>
+            <div class="payment-details" id="paymentDetails"></div>
+            <button class="close-modal-btn" onclick="closeSuccessModal()">Continue Shopping</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let sessionId = generateSessionId();
+
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const successModal = document.getElementById('successModal');
+
+        function showSuccessModal(paymentData) {
+            const modalMessage = document.getElementById('modalMessage');
+            const paymentDetails = document.getElementById('paymentDetails');
+            
+            modalMessage.textContent = paymentData.message || 'Your payment has been processed successfully';
+            
+            // Build payment details HTML
+            let detailsHTML = '';
+            if (paymentData.amount) {
+                detailsHTML += `
+                    <div>
+                        <span class="label">Amount:</span>
+                        <span class="value">${paymentData.amount} ${paymentData.currency || 'USD'}</span>
+                    </div>
+                `;
+            }
+            if (paymentData.payment_id) {
+                detailsHTML += `
+                    <div>
+                        <span class="label">Payment ID:</span>
+                        <span class="value">${paymentData.payment_id}</span>
+                    </div>
+                `;
+            }
+            if (paymentData.status) {
+                detailsHTML += `
+                    <div>
+                        <span class="label">Status:</span>
+                        <span class="value" style="color: #4caf50; text-transform: uppercase;">${paymentData.status}</span>
+                    </div>
+                `;
+            }
+            
+            paymentDetails.innerHTML = detailsHTML;
+            successModal.classList.add('active');
+        }
+
+        function closeSuccessModal() {
+            successModal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        successModal.addEventListener('click', (e) => {
+            if (e.target === successModal) {
+                closeSuccessModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && successModal.classList.contains('active')) {
+                closeSuccessModal();
+            }
+        });
+
+        // Create typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'message assistant';
+        typingIndicator.innerHTML = `
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        `;
+
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Try to parse as JSON to detect payment success
+            try {
+                const jsonData = JSON.parse(content);
+                if (jsonData.success && jsonData.payment_id) {
+                    // This is a payment success response
+                    contentDiv.textContent = jsonData.message || 'Payment processed successfully!';
+                    messageDiv.appendChild(contentDiv);
+                    chatContainer.appendChild(messageDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    
+                    // Show success modal
+                    setTimeout(() => showSuccessModal(jsonData), 500);
+                    return;
+                }
+            } catch (e) {
+                // Not JSON, continue with normal processing
+            }
+            
+            // Convert URLs to clickable links
+            const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
+            
+            console.log('Original content:', content); // Debug
+            
+            const contentWithLinks = content.replace(urlRegex, (url) => {
+                console.log('Found URL before cleaning:', url); // Debug
+                
+                // Clean trailing punctuation that might be added by ChatGPT
+                let cleanUrl = url.replace(/[)\].,;!?]+$/, '');
+                
+                console.log('Cleaned URL:', cleanUrl); // Debug
+                
+                // Check if it's a Stripe checkout URL
+                if (cleanUrl.includes('checkout.stripe.com')) {
+                    console.log('Creating checkout button with URL:', cleanUrl); // Debug
+                    // Opens in NEW TAB - target="_blank" with proper security attributes
+                    return `<a href="${cleanUrl}" class="checkout-link" target="_blank" rel="noopener noreferrer">
+                        🔗 Open Checkout in New Tab →
+                    </a>`;
+                }
+                return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>`;
+            });
+            
+            contentDiv.innerHTML = contentWithLinks;
+            messageDiv.appendChild(contentDiv);
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            chatContainer.appendChild(typingIndicator);
+            typingIndicator.querySelector('.typing-indicator').classList.add('active');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            if (typingIndicator.parentNode) {
+                typingIndicator.querySelector('.typing-indicator').classList.remove('active');
+                typingIndicator.remove();
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            chatContainer.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Disable input
+            sendButton.disabled = true;
+            messageInput.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                console.log('Full API response:', data); // Debug
+                console.log('Checkout URL from backend:', data.checkout_url); // Debug
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Check if there's a checkout URL in the response
+                if (data.checkout_url) {
+                    // Add the assistant's message
+                    addMessage(data.response, 'assistant');
+                    
+                    // Store the full URL
+                    const fullCheckoutUrl = data.checkout_url;
+                    
+                    // Add a separate checkout button with click handler
+                    const checkoutDiv = document.createElement('div');
+                    checkoutDiv.className = 'message assistant';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    
+                    const button = document.createElement('button');
+                    button.className = 'checkout-link';
+                    button.textContent = '🔗 Open Checkout in New Tab →';
+                    button.style.cursor = 'pointer';
+                    button.style.border = 'none';
+                    
+                    // Use click handler to open URL - this preserves the full URL
+                    button.onclick = function() {
+                        console.log('Opening URL:', fullCheckoutUrl);
+                        window.open(fullCheckoutUrl, '_blank', 'noopener,noreferrer');
+                    };
+                    
+                    contentDiv.appendChild(button);
+                    checkoutDiv.appendChild(contentDiv);
+                    chatContainer.appendChild(checkoutDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    
+                    console.log('Button created with onclick for URL:', fullCheckoutUrl); // Debug
+                } else {
+                    // Add assistant response normally
+                    addMessage(data.response, 'assistant');
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                showError('Failed to send message. Please make sure the server is running.');
+                console.error('Error:', error);
+            } finally {
+                // Re-enable input
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Focus input on load
+        messageInput.focus();
+    </script>
+</body>
+</html>
