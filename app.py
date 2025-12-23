@@ -203,7 +203,8 @@ def process_test_payment(product_id: str) -> str:
             },
             metadata={
                 'product_id': product_id,
-                'product_name': product['name']
+                'product_name': product['name'],
+                "agentic_payment": "true"
             }
         )
         
@@ -326,6 +327,8 @@ Always be friendly and helpful!"""
                 messages=conversations[session_id]
             )
             
+            print(f"Semi Final response: {final_response}")
+
             final_message = final_response.choices[0].message.content
             conversations[session_id].append({
                 "role": "assistant",
